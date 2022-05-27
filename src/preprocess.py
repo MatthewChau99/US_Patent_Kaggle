@@ -6,6 +6,7 @@ from transformers import BertTokenizer
 from src.config import ROOT_PATH
 
 train_df = pd.read_csv(os.path.join(ROOT_PATH, 'data', 'train.csv'))
+test_df = pd.read_csv(os.path.join(ROOT_PATH, 'data', 'test.csv'))
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 
@@ -43,7 +44,7 @@ def concat(*args) -> str:
     return ' # '.join(args)
 
 
-def preprocess(file_name) -> pd.DataFrame:
+def preprocess(file_name, dataframe=train_df) -> pd.DataFrame:
     """
     This preprocessor does three things to the train_df in /data:
     1. Converts column "context" into its corresponding names for the context codes in column "context_text"
@@ -53,17 +54,18 @@ def preprocess(file_name) -> pd.DataFrame:
     :param file_name: the output file name
     :return: the processed Dataframe
     """
-    train_df['context_text'] = train_df['context'].apply(context_to_text)
-    train_df['concat'] = train_df.apply(lambda x: concat(x['anchor'], x['target'], x['context_text']), axis=1)
-    train_df['concat_vec'] = train_df['concat'].apply(
+    
+    dataframe['context_text'] = dataframe['context'].apply(context_to_text)
+    dataframe['concat'] = dataframe.apply(lambda x: concat(x['anchor'], x['target'], x['context_text']), axis=1)
+    dataframe['concat_vec'] = dataframe['concat'].apply(
         lambda x: tokenizer(x, padding='longest', truncation=True)['input_ids'])
 
     if not os.path.exists(os.path.join(ROOT_PATH, 'data', 'processed')):
         os.mkdir(os.path.join(ROOT_PATH, 'data', 'processed'))
 
-    train_df.to_csv(os.path.join(ROOT_PATH, 'data', 'processed', file_name))
-    return train_df
+    dataframe.to_csv(os.path.join(ROOT_PATH, 'data', 'processed', file_name))
+    return dataframe
 
 
 if __name__ == '__main__':
-    print(preprocess('train.csv'))
+    preprocess(file_name='test.csv', dataframe=test_df)
