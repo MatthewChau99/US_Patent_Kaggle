@@ -33,8 +33,7 @@ class TestDataset(Dataset):
 
 
 def model_predict(dataframe, model_path, tokenizer):
-    model = AutoModelForSequenceClassification.from_pretrained(
-        model_path, num_labels=1).to(device)
+    model = AutoModelForSequenceClassification.from_pretrained(model_path, num_labels=1).to(device)
     test_dataset = TestDataset(dataframe, tokenizer)
 
     trainer = Trainer(model, tokenizer=tokenizer)
@@ -46,8 +45,7 @@ def model_predict(dataframe, model_path, tokenizer):
 def single_model_inference():
     scores = model_predict(test_df, model_path, single_tokenizer)
 
-    submit_df = pd.DataFrame(
-        np.c_[test_df['id'], scores], columns=['id',  'score'])
+    submit_df = pd.DataFrame(np.c_[test_df['id'], scores], columns=['id',  'score'])
     submit_df.to_csv('submission.csv', index=False)
 
     return submit_df
@@ -66,16 +64,17 @@ def ensemble_inference(weights):
 
         for fold in range(5):
             print(f'Reading in model {model_path} fold {fold}')
-            tokenizer_5fold = AutoTokenizer.from_pretrained(
-                f"{model_path}/fold{i}")
-            fold_scores.append(model_predict(
-                test_df, f"{model_path}/fold{i}", tokenizer_5fold))
+            tokenizer_5fold = AutoTokenizer.from_pretrained(f"{model_path}/fold{i}")
+            fold_scores.append(model_predict(test_df, f"{model_path}/fold{i}", tokenizer_5fold))
 
         scores.append(np.mean(fold_scores, axis=0))
 
     final_scores = np.average(scores, axis=0, weights=weights)
-    submit_df = pd.DataFrame(
-        np.c_[test_df['id'], final_scores], columns=['id',  'score'])
+    submit_df = pd.DataFrame(np.c_[test_df['id'], final_scores], columns=['id',  'score'])
     submit_df.to_csv('submission.csv', index=False)
 
     return submit_df
+
+
+if __name__ == '__main__':
+    submission = ensemble_inference()

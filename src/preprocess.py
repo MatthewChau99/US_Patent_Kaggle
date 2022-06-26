@@ -5,7 +5,6 @@ from src.config import train_path, test_path, titles_path
 
 train_df = pd.read_csv(train_path)
 test_df = pd.read_csv(test_path)
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 titles_df = pd.read_csv(titles_path)
 titles_map = pd.Series(titles_df.title.values, index=titles_df.code).to_dict()
 

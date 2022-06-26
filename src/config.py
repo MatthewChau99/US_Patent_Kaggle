@@ -10,4 +10,8 @@ ensemble_5folds = ['../input/deberta-v3-5folds/', '../input/bert-for-patent-5fol
 
 batch_size = 16
 max_len = 133
-
+learning_rate = 2e-5
+weight_decay = 0.01
+num_fold = 5
+epochs = 5
+out_dir = 'Matthew_models/deberta/5-fold'
