@@ -1,13 +1,13 @@
-import os
-
 import pandas as pd
 from transformers import BertTokenizer
 
-from src.config import ROOT_PATH
+from src.config import train_path, test_path, titles_path
 
-train_df = pd.read_csv(os.path.join(ROOT_PATH, 'data', 'train.csv'))
-test_df = pd.read_csv(os.path.join(ROOT_PATH, 'data', 'test.csv'))
+train_df = pd.read_csv(train_path)
+test_df = pd.read_csv(test_path)
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+titles_df = pd.read_csv(titles_path)
+titles_map = pd.Series(titles_df.title.values, index=titles_df.code).to_dict()
 
 
 def context_to_text(context: str) -> str:
@@ -44,7 +44,7 @@ def concat(*args) -> str:
     return ' # '.join(args)
 
 
-def preprocess(file_name, dataframe=train_df) -> pd.DataFrame:
+def preprocess(dataframe=train_df) -> pd.DataFrame:
     """
     This preprocessor does three things to the train_df in /data:
     1. Converts column "context" into its corresponding names for the context codes in column "context_text"
@@ -54,18 +54,23 @@ def preprocess(file_name, dataframe=train_df) -> pd.DataFrame:
     :param file_name: the output file name
     :return: the processed Dataframe
     """
-    
+    def code_to_title(code: str) -> str:
+        if code not in titles_map:
+            print(f'{code} is not in the dict')
+            return ''
+
+        return titles_map[code]
+
+    def concat(*args) -> str:
+        return ' [SEP] '.join(args)
+
     dataframe['context_text'] = dataframe['context'].apply(context_to_text)
-    dataframe['concat'] = dataframe.apply(lambda x: concat(x['anchor'], x['target'], x['context_text']), axis=1)
-    dataframe['concat_vec'] = dataframe['concat'].apply(
-        lambda x: tokenizer(x, padding='longest', truncation=True)['input_ids'])
+    dataframe['title'] = dataframe['context'].apply(code_to_title)
+    dataframe['concat'] = dataframe.apply(lambda x: concat(
+        x['anchor'], x['target'], x['context_text'], x['title']), axis=1)
 
-    if not os.path.exists(os.path.join(ROOT_PATH, 'data', 'processed')):
-        os.mkdir(os.path.join(ROOT_PATH, 'data', 'processed'))
-
-    dataframe.to_csv(os.path.join(ROOT_PATH, 'data', 'processed', file_name))
     return dataframe
 
 
 if __name__ == '__main__':
-    preprocess(file_name='test.csv', dataframe=test_df)
+    print(preprocess(dataframe=test_df))
